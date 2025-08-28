@@ -5,24 +5,30 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from yt_dlp import YoutubeDL
 
-# Configure yt-dlp options
+# Ensure downloads folder exists
+os.makedirs('downloads', exist_ok=True)
+
+# yt-dlp options
 YDL_OPTS = {
     'format': 'best',
     'outtmpl': 'downloads/%(title)s.%(ext)s',
     'noplaylist': True,
     'quiet': True,
+    'nocheckcertificate': True,  # For Railway SSL issues
 }
-
-# Ensure downloads folder exists
-os.makedirs('downloads', exist_ok=True)
 
 async def download_video(url: str):
     loop = asyncio.get_event_loop()
     info = {}
+
     def run_ydl():
         nonlocal info
-        with YoutubeDL(YDL_OPTS) as ydl:
-            info = ydl.extract_info(url, download=True)
+        try:
+            with YoutubeDL(YDL_OPTS) as ydl:
+                info = ydl.extract_info(url, download=True)
+        except Exception as e:
+            raise RuntimeError(f"yt-dlp error: {e}")
+
     await loop.run_in_executor(None, run_ydl)
     filename = YDL_OPTS['outtmpl'] % {'title': info['title'], 'ext': info.get('ext', 'mp4')}
     return filename, info
@@ -30,17 +36,17 @@ async def download_video(url: str):
 @Client.on_message(filters.private & filters.command("adult"))
 async def adult_handler(client, message):
     if len(message.command) < 2:
-        await message.reply_text("❌ Please provide a video link. Usage:\n/adult <link>")
+        await message.reply_text("❌ Please provide a video link:\n/adult <link>")
         return
 
     url = message.command[1]
-
     msg = await message.reply_text("⏳ Downloading your video...")
 
     try:
         file_path, info = await download_video(url)
     except Exception as e:
         await msg.edit(f"❌ Failed to download video:\n{e}")
+        print(f"[ERROR] Download failed: {e}")
         return
 
     caption = (
@@ -67,9 +73,10 @@ async def adult_handler(client, message):
         )
     except Exception as e:
         await msg.edit(f"❌ Failed to upload video:\n{e}")
+        print(f"[ERROR] Upload failed: {e}")
         return
 
     await msg.delete()
-    # Remove the downloaded file
+    # Clean up downloaded file
     if os.path.exists(file_path):
         os.remove(file_path)
