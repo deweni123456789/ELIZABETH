@@ -1,6 +1,6 @@
 from pyrogram import Client
 import config
-import modules.adult  # just import to register handler
+from modules import adult
 
 app = Client(
     "adult-bot",
@@ -8,6 +8,9 @@ app = Client(
     api_hash=config.API_HASH,
     bot_token=config.BOT_TOKEN
 )
+
+# Register the handler with the running instance
+adult.register_adult(app)
 
 print("🤖 Adult Bot is running...")
 app.run()
