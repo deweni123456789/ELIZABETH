@@ -1,3 +1,3 @@
-API_ID = 123456          # your Telegram API ID
-API_HASH = "your_api_hash"
-BOT_TOKEN = "your_bot_token"
+API_ID = 5047271          # your Telegram API ID
+API_HASH = "047d9ed308172e637d4265e1d9ef0c27"
+BOT_TOKEN = "8400227620:AAEje87350ILP5lJxMeb57rOn9K8yBY1f2o"
